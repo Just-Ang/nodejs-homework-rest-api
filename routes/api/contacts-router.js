@@ -16,6 +16,7 @@ const contactSchema = Joi.object({
     .required(),
 });
 
+
 const router = express.Router();
 
 router.get("/", async (req, res, next) => {
