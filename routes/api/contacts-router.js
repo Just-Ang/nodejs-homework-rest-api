@@ -3,7 +3,7 @@ import contactsOperations from "../../models/contacts.js";
 
 import HttpError from "../../helpers/HtttpError.js";
 
-import contactSchema from "../../schemas/contacts-schema.js";
+import contactsSchema from "../../schemas/contacts-schema.js";
 
 const router = express.Router();
 
@@ -33,7 +33,7 @@ router.get("/:contactId", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const { error } = contactSchema.validate(req.body);
+    const { error } = contactsSchema.contactsAddSchema.validate(req.body);
     if (error) {
       throw HttpError(400, error.message);
     }
@@ -63,7 +63,7 @@ router.delete("/:contactId", async (req, res, next) => {
 
 router.put("/:contactId", async (req, res, next) => {
   try {
-    const { error } = contactSchema.validate(req.body);
+    const { error } = contactsSchema.contactsAddSchema.validate(req.body);
     if (error) {
       throw HttpError(400, error.message);
     }
