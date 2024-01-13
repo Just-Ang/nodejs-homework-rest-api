@@ -3,6 +3,10 @@ import logger from "morgan";
 import cors from "cors";
 import router from "./routes/api/contacts-router.js";
 
+import { configDotenv } from "dotenv";
+
+configDotenv();
+
 const app = express();
 
 const formatsLogger = app.get("env") === "development" ? "dev" : "short";
