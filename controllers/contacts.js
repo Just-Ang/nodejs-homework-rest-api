@@ -1,10 +1,25 @@
 import ctrlWrapper from "../decorators/ctrlWrapper.js";
 import HttpError from "../helpers/HtttpError.js";
 import Contact from "../models/contacts.js";
-import contactsSchema from "../schemas/contacts-schema.js";
+
 
 const getAll = async (req, res) => {
-  const contacts = await Contact.find();
+  const { _id: owner } = req.user;
+  const { page = 1, limit = 20, favorite } = req.query;
+  const skip = (page - 1) * limit;
+  if (favorite) {
+    const contacts = await Contact.find(
+      { owner, favorite },
+      "-cratedAt -updatedAt",
+      { skip, limit }
+    ).populate("owner", "email subscription");
+    res.json(contacts);
+  }
+
+  const contacts = await Contact.find({ owner }, "-cratedAt -updatedAt", {
+    skip,
+    limit,
+  }).populate("owner", "email subscription");
   res.json(contacts);
 };
 
@@ -18,11 +33,8 @@ const getById = async (req, res) => {
 };
 
 const addContact = async (req, res) => {
-  const { error } = contactsSchema.contactsAddSchema.validate(req.body);
-  if (error) {
-    throw HttpError(400, error.message);
-  }
-  const result = await Contact.create(req.body);
+  const { _id: owner } = req.user;
+  const result = await Contact.create({ ...req.body, owner });
   res.status(201).json(result);
 };
 
@@ -50,13 +62,9 @@ const updateContact = async (req, res) => {
 
 const updateStatusContact = async (req, res) => {
   const { contactId } = req.params;
-  if (req.body) {
-    throw HttpError(400, "missing field favorite");
-  }
   const result = await Contact.findByIdAndUpdate(contactId, req.body, {
     new: true,
   });
-  
   if (!result) {
     throw HttpError(404, "Not found");
   }
@@ -70,5 +78,4 @@ export default {
   deleteContact: ctrlWrapper(deleteContact),
   updateContact: ctrlWrapper(updateContact),
   updateStatusContact: ctrlWrapper(updateStatusContact),
-  
 };
