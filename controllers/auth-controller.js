@@ -28,7 +28,7 @@ const signup = async (req, res) => {
 };
 
 const signin = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password} = req.body;
   const user = await User.findOne({ email });
   if (!user) {
     throw HttpError(401, "Email or password is wrong");
@@ -46,8 +46,14 @@ const signin = async (req, res) => {
   const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "23h" });
   await User.findByIdAndUpdate(user._id, { token });
 
+  const {subscription} = user;
+
   res.json({
     token,
+    "user": {
+        email,
+        subscription,
+      }
   });
 };
 
