@@ -20,6 +20,7 @@ const userSchema = new Schema({
     default: "starter",
   },
   token: String,
+  avatarURL: String,
 });
 
 userSchema.pre("findOneAndUpdate", validateAtUpdate);
