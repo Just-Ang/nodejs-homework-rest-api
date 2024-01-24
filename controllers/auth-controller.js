@@ -9,6 +9,9 @@ import Jimp from "jimp";
 import path from "path";
 import fs from "fs/promises";
 import gravatar from "gravatar";
+import createVerifyEmail from "../helpers/createVerifyEmail.js";
+import sendEmail from "../helpers/sendEmail.js";
+import { nanoid } from "nanoid";
 
 
 dotenv.config();
@@ -27,12 +30,18 @@ const signup = async (req, res) => {
   const userAvatar = gravatar.url(email);
 
   const hashPassword = await bcrypt.hash(password, 10);
+  const verificationToken = nanoid();
+
 
   const newUser = await User.create({
     ...req.body,
     password: hashPassword,
     avatarURL: userAvatar,
+    verificationToken,
   });
+
+  const verifyEmail = createVerifyEmail({ email, verificationToken });
+  await sendEmail(verifyEmail);
 
   res.status(201).json({
     email: newUser.email,
@@ -45,6 +54,10 @@ const signin = async (req, res) => {
   const user = await User.findOne({ email });
   if (!user) {
     throw HttpError(401, "Email or password is wrong");
+  }
+
+  if (!user.verify) {
+    throw HttpError(401, "Email not verify");
   }
 
   const passwordCompare = await bcrypt.compare(password, user.password);
@@ -124,6 +137,52 @@ const updateAvatar = async (req, res) => {
   });
 };
 
+
+
+const verify = async (req, res) => {
+  const { verificationToken } = req.params;
+  const user = await User.findOne({ verificationToken });
+  if (!user) {
+    throw HttpError(404, "Email not found");
+  }
+  await User.findByIdAndUpdate(user._id, {
+    verify: true,
+    verificationToken: " ",
+  });
+
+  res.json({
+    message: "Verification successful",
+  });
+};
+
+const resendVerify = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    throw HttpError(400, "missing required field email");
+  }
+
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw HttpError(404, "Email not found");
+  }
+
+  if (user.verify) {
+    throw HttpError(400, "Verification has already been passed");
+  }
+
+  const verifyEmail = createVerifyEmail({
+    email,
+    verificationToken: user.verificationToken,
+  });
+
+  await sendEmail(verifyEmail);
+
+  res.json({
+    message: "Verification email sent",
+  });
+};
+
 export default {
   signup: ctrlWrapper(signup),
   signin: ctrlWrapper(signin),
@@ -131,4 +190,6 @@ export default {
   logout: ctrlWrapper(logout),
   changeSubscription: ctrlWrapper(changeSubscription),
   updateAvatar: ctrlWrapper(updateAvatar),
+  verify: ctrlWrapper(verify),
+  resendVerify: ctrlWrapper(resendVerify),
 };
