@@ -13,6 +13,8 @@ authRouter.get("/current", authenticate, authController.getCurrent);
 authRouter.post("/logout", authenticate, authController.logout);
 authRouter.patch("/", authenticate, authController.changeSubscription);
 authRouter.patch("/avatars", authenticate, upload.single("avatar"), authController.updateAvatar);
+authRouter.get("/verify/:verificationToken", authController.verify);
+authRouter.post("/verify", authController.resendVerify);
 
 
 
